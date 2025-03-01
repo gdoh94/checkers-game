@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Checkers Game</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #game-board {
+            display: grid;
+            grid-template-columns: repeat(8, 60px);
+            grid-gap: 1px;
+            width: 480px;
+            margin-top: 20px;
+        }
+
+        .cell {
+            width: 60px;
+            height: 60px;
+        }
+
+        .black {
+            background-color: black;
+        }
+
+        .red {
+            background-color: red;
+        }
+
+        .piece {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 30px;
+            cursor: grab;
+        }
+
+        .piece[draggable="true"]:active {
+            cursor: grabbing;
+        }
+    </style>
+</head>
+<body>
+    <h1>Checkers Game</h1>
+    <div id="game-board"></div>
+    <script>
+        let board = [
+            [0, 1, 0, 1, 0, 1, 0, 1],
+            [1, 0, 1, 0, 1, 0, 1, 0],
+            [0, 1, 0, 1, 0, 1, 0, 1],
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [2, 0, 2, 0, 2, 0, 2, 0],
+            [0, 2, 0, 2, 0, 2, 0, 2],
+            [2, 0, 2, 0, 2, 0, 2, 0]
+        ];
+
+        let currentPlayer = 1;
+        let draggedPiece = null;
+        let startRow = null;
+        let startCol = null;
+
+        function renderBoard() {
+            const gameBoard = document.getElementById('game-board');
+            gameBoard.innerHTML = '';
+
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    const cell = document.createElement('div');
+                    cell.className = (row % 2 === col % 2) ? 'black cell' : 'red cell';
+                    cell.dataset.row = row;
+                    cell.dataset.col = col;
+
+                    if (board[row][col] === 1 || board[row][col] === 2) {
+                        const piece = document.createElement('div');
+                        piece.className = 'piece';
+                        piece.innerHTML = '●';
+                        piece.style.color = (board[row][col] === 1) ? 'white' : 'black';
+                        piece.setAttribute('draggable', true);
+
+                        // Add drag event listeners
+                        piece.addEventListener('dragstart', (e) => {
+                            draggedPiece = e.target;
+                            startRow = parseInt(cell.dataset.row);
+                            startCol = parseInt(cell.dataset.col);
+                        });
+
+                        piece.addEventListener('dragend', () => {
+                            draggedPiece = null;
+                        });
+
+                        cell.appendChild(piece);
+                    }
+
+                    // Add drop event listeners
+                    cell.addEventListener('dragover', (e) => {
+                        e.preventDefault();
+                    });
+
+                    cell.addEventListener('drop', (e) => {
+                        e.preventDefault();
+                        const endRow = parseInt(cell.dataset.row);
+                        const endCol = parseInt(cell.dataset.col);
+                        makeMove(startRow, startCol, endRow, endCol);
+                    });
+
+                    gameBoard.appendChild(cell);
+                }
+            }
+        }
+
+        function isValidMove(startRow, startCol, endRow, endCol, player) {
+            if (board[endRow][endCol] !== 0) return false;
+
+            let direction = (player === 1) ? 1 : -1;
+
+            if (Math.abs(startCol - endCol) === 1 && endRow - startRow === direction) {
+                return true;
+            }
+
+            if (Math.abs(startCol - endCol) === 2 && Math.abs(endRow - startRow) === 2) {
+                let midRow = (startRow + endRow) / 2;
+                let midCol = (startCol + endCol) / 2;
+                if (board[midRow][midCol] === (player === 1 ? 2 : 1)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        function makeMove(startRow, startCol, endRow, endCol) {
+            if (isValidMove(startRow, startCol, endRow, endCol, currentPlayer)) {
+                board[endRow][endCol] = board[startRow][startCol];
+                board[startRow][startCol] = 0;
+
+                if (Math.abs(endRow - startRow) === 2) {
+                    let midRow = (startRow + endRow) / 2;
+                    let midCol = (startCol + endCol) / 2;
+                    board[midRow][midCol] = 0;
+                }
+
+                switchTurns();
+                renderBoard();
+                checkWin();
+            }
+        }
+
+        function switchTurns() {
+            currentPlayer = (currentPlayer === 1) ? 2 : 1;
+        }
+
+        function checkWin() {
+            let player1Pieces = 0;
+            let player2Pieces = 0;
+
+            board.forEach(row => {
+                row.forEach(cell => {
+                    if (cell === 1) player1Pieces++;
+                    if (cell === 2) player2Pieces++;
+                });
+            });
+
+            if (player1Pieces === 0) {
+                alert("Player 2 Wins!");
+            } else if (player2Pieces === 0) {
+                alert("Player 1 Wins!");
+            }
+        }
+
+        renderBoard();
+    </script>
+</body>
+</html>
